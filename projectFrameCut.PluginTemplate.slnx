@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="projectFrameCut.PluginPackager.MSBuild/projectFrameCut.PluginPackager.MSBuild.csproj" Id="2268baf2-3dd5-4437-86b5-b1676bd3546a" />
+  <Project Path="projectFrameCut.PluginPackager/projectFrameCut.PluginPackager.csproj" Id="3e8d97c7-ae0f-4de8-90a9-bf9026111c92" />
+  <Project Path="projectFrameCut.PluginTemplate/projectFrameCut.PluginTemplate.csproj" />
+</Solution>

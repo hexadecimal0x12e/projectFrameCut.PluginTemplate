@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Detect whether the project is being built inside Visual Studio -->
+  <PropertyGroup>
+    <IsVisualStudioBuild Condition="'$(BuildingInsideVisualStudio)' == 'true'">true</IsVisualStudioBuild>
+    <IsVisualStudioBuild Condition="'$(BuildingInsideVisualStudio)' != 'true' and '$(VisualStudioVersion)' != ''">true</IsVisualStudioBuild>
+    <IsVisualStudioBuild Condition="'$(IsVisualStudioBuild)' == ''">false</IsVisualStudioBuild>
+  </PropertyGroup>
+
+  <Target Name="DetectBuildEnvironment" BeforeTargets="BeforeBuild">
+    <Message Text="Build environment detected: IsVisualStudioBuild=$(IsVisualStudioBuild)" Importance="High" />
+  </Target>
+
+  <!-- Default assembly path resolution (prefer net10.0 if available, fallback to netstandard2.0). -->
+  <PropertyGroup>
+    <_PluginPackagerDllPath Condition="Exists('$(MSBuildThisFileDirectory)..\lib\net10.0\projectFrameCut.PluginPackager.MSBuild.dll')">$(MSBuildThisFileDirectory)..\lib\net10.0\projectFrameCut.PluginPackager.MSBuild.dll</_PluginPackagerDllPath>
+    <_PluginPackagerDllPath Condition="'$(_PluginPackagerDllPath)' == '' And Exists('$(MSBuildThisFileDirectory)..\lib\netstandard2.0\projectFrameCut.PluginPackager.MSBuild.dll')">$(MSBuildThisFileDirectory)..\lib\netstandard2.0\projectFrameCut.PluginPackager.MSBuild.dll</_PluginPackagerDllPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsVisualStudioBuild)' == 'true'">
+    <_PluginPackagerDllPath Condition="'$(_PluginPackagerDllPath)' == ''">$(MSBuildThisFileDirectory)..\lib\netstandard2.0\projectFrameCut.PluginPackager.MSBuild.dll</_PluginPackagerDllPath>
+  </PropertyGroup>
+  <Target Name="VisualStudioBuildWarning" BeforeTargets="BeforeBuild" Condition="'$(IsVisualStudioBuild)' == 'true'">
+    <Message Text="To bundle a plugin, please use the 'dotnet' command line tool, instead of Visual Studio." Importance="High" />
+  </Target>
+  <PropertyGroup Condition="'$(IsVisualStudioBuild)' == 'false' Or '$(BundlePlugin)' == 'true'">
+		<IsVisualStudioBuild>false</IsVisualStudioBuild>
+  </PropertyGroup>
+
+  <UsingTask TaskName="projectFrameCut.PluginPackager.MSBuild.PluginBuilder"
+             AssemblyFile="$(_PluginPackagerDllPath)" />
+
+  <Target Name="GeneratePluginSource" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+      <_OutDir>$(OutputPath)</_OutDir>
+    </PropertyGroup>
+    <PluginBuilder
+      SignFilePath="none"
+      OutputDirectory="$(_OutDir)"
+      ProjectRootPath="$(MSBuildProjectDirectory)"
+      PluginOutputPath="$(MSBuildProjectFullPath)"
+      PluginID="$(PackageId)"
+      Authors="$(Authors)"
+      NeutralLanguageDisplayName="$(Title)"
+      NeutralLanguageDescription="$(Description)"
+      PluginVersion="$(Version)"
+      PluginProjectUrl="$(PackageProjectUrl)"
+      PluginPublishUrl="$(PluginPublishUrl)"
+      GenerateSource="true" />
+  </Target>
+
+  <ItemGroup>
+    <Compile Include=".\obj\GeneratedSource\PluginInfo.sg.cs" Link="" />
+  </ItemGroup>
+
+  <Target Name="PackagePlugin" AfterTargets="Publish">
+    <PropertyGroup>
+      <!-- Use PublishDir when publishing (dotnet publish -o); fall back to OutputPath otherwise -->
+      <_OutDir Condition="'$(PublishDir)' != ''">$(PublishDir)</_OutDir>
+      <_OutDir Condition="'$(PublishDir)' == ''">$(OutputPath)</_OutDir>
+    </PropertyGroup>
+
+    <PluginBuilder
+      ProjectRootPath="$(MSBuildProjectDirectory)"
+      SignFilePath="$(PluginSignFilePath)"
+      AssetPath="$(PluginAssetPath)"
+      OutputDirectory="$(_OutDir)"
+      TargetFrameworkID="$(TargetFramework)"
+      PluginOutputPath="$(MSBuildProjectFullPath)"
+      Authors="$(Authors)"
+      PluginProjectUrl="$(PackageProjectUrl)"
+      NeutralLanguageDescription="$(Description)"
+      PluginID="$(PackageId)"
+      PluginVersion="$(Version)"
+      NeutralLanguageDisplayName="$(Title)" >
+      <Output TaskParameter="PluginPackagePath" PropertyName="GeneratedPluginPackage" />
+    </PluginBuilder>
+
+    <Message Text="Generated plugin package: $(GeneratedPluginPackage)" Importance="High" />
+  </Target>
+
+</Project>
