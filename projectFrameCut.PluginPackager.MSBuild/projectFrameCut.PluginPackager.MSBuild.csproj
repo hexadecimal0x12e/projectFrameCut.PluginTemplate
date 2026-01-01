@@ -17,6 +17,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <Pack>true</Pack>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md" Condition="Exists('readme.md')" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
