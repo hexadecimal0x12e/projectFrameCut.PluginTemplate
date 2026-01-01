@@ -1,0 +1,1 @@
+# projectFrameCut.PluginTemplate
