@@ -187,7 +187,12 @@ namespace projectFrameCut.PluginPackager.MSBuild
             GetKeypairFromFile(kpPath, out pubKey, out priKey);
 
             Console.WriteLine("Encrypting assembly...");
-            Directory.CreateDirectory(Path.Combine(tempPath, "plugin"));
+            var pluginDir = Path.Combine(tempPath, "plugin");
+            if (Directory.Exists(pluginDir))
+            {
+                Directory.Delete(pluginDir, true);
+            }
+            Directory.CreateDirectory(pluginDir);
             var sig = projectFrameCut.Shared.FileSignerService.SignFile(priKey, mainDllPath);
             var sigPath = Path.Combine(tempPath, "plugin", pluginID + ".dll.sig");
             File.WriteAllText(sigPath, sig);
@@ -198,7 +203,7 @@ namespace projectFrameCut.PluginPackager.MSBuild
             mtd.PluginHash = ComputeFileHashAsync(mainDllPath);
             mtd.PluginKey = sigKey;
             var mtdJson = JsonConvert.SerializeObject(mtd, Formatting.Indented);
-            Console.WriteLine($"Metadata:\r\n{mtd}");
+            Console.WriteLine($"Metadata:\r\n{mtdJson}");
 
             Console.WriteLine("Packaging plugin...");
             File.WriteAllText(Path.Combine(tempPath, "plugin", "metadata.json"), mtdJson);

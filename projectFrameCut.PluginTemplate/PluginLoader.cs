@@ -1,6 +1,5 @@
 ﻿// IMPORTANT: DO NOT add edit or add any methods, members or namespaces in this file except the line indicated in the comments.
 
-using nobody;
 using projectFrameCut.Render.RenderAPIBase.Plugins;
 using System;
 using System.Collections.Generic;
@@ -42,8 +41,16 @@ namespace projectFrameCut.Plugin
         {
             LocaleId = currentLocale;
             PluginRoot = pluginRoot;
-            //Please only edit the line below.
-            return new MyExamplePlugin();
+            //Please edit the line below ONLY.
+            //note you may add some extra methods before returning the instance,
+            //like boot the helper process, prepare dependencies files, etc.
+
+            //please use the full qualified name for your plugin class.
+            var instance = new nobody.MyExamplePlugin();
+
+            //DO NOT modify the lines below.
+            projectFrameCut.Shared.Logger.LogDiagnostic($"PluginLoader for plugin '{instance.Name}' invoked.");
+            return instance;
         }
 
     }
