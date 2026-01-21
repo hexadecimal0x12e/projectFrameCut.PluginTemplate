@@ -8,18 +8,16 @@ using System.Text;
 
 //DO NOT modify the namespace name, 
 //be careful when you're using some tool to sync namespaces from file structure.
-#pragma warning disable IDE0130
 namespace projectFrameCut.Plugin
-#pragma warning restore IDE0130
 {
     /// <summary>
-    /// Provides methods and properties to load the plugin and communicate with the host application.
+    /// Provides methods and properties to load the plugin and communicate with the host application inside application level.
     /// </summary>
     /// <remarks>
     /// Please only edit the CreateInstance method to return an instance of your plugin implementation.
     /// </remarks>
     [GeneratedCode("projectFrameCut.PluginPackager.MSBuild", null)] //well this isn't generated but add this may avoid some tools automatically flagging this file.
-    public static partial class PluginLoader
+    public static partial class AppLevelPluginLoader
     {
         /// <summary>
         /// Specifies the default locale identifier used for some culture-specific operations.
@@ -45,12 +43,14 @@ namespace projectFrameCut.Plugin
         {
             LocaleId = currentLocale;
             PluginRoot = pluginRoot;
+            PluginLoader.LocaleId = currentLocale;
+            PluginLoader.PluginRoot = pluginRoot;
             //Please edit the line below ONLY.
             //note you may add some extra methods before returning the instance,
             //like boot the helper process, prepare dependencies files, etc.
 
             //please use the full qualified name for your plugin class.
-            var instance = new nobody.MyExamplePlugin();
+            var instance = new nobody.MyExamplePluginApplicationLevelPart();
 
             //DO NOT modify the lines below.
             projectFrameCut.Shared.Logger.LogDiagnostic($"PluginLoader for plugin '{instance.Name}' invoked.");

@@ -1,198 +1,76 @@
 # projectFrameCut 插件模板
-这个仓库提供了能够让你为[projectFrameCut](https://github.com/hexadecimal0x12e/projectFrameCut)及其衍生版本（如果他们的开发者愿意的话）开发一个插件，自定义projectFrameCut的功能的能力。
-它还包含了一个插件的模板，你可以从模板开始，也可以手动一步步来，从头开始。
-
-# 基础条件
-请确保你的设备上有 .NET 10 的SDK，如果你在使用Visual Studio，请使用Visual Studio 2022或者更新。
-虽然你的插件可以不面向 .NET 10，但是共享库是面向 .NET 10 的，使用 .NET 10 可以避免一些奇奇怪怪的问题。
-你可以使用任何IDE、系统开发插件，你还可以用F#、VB .NET~~或者MSIL~~来写你的插件。
-
-# 从模板开始
-0. 克隆这个项目到你的电脑上
-1. 获取并引用projectFrameCut共享库
-
-projectFrameCut共享库包括了大部分projectFrameCut渲染和处理的基础API，并且定义了许多基础类的接口。
-你可以直接从projectFrameCut的主程序目录里找到`projectFrameCut.Shared.dll`和`projectFrameCut.Render.RenderAPIBase.dll`，然后复制到项目根目录里的`PluginBaseAssembly`文件夹里。
-
-2. 配置项目
-修改项目的.csproj的第一个`PropertyGroup`：
-```xml
-<PackageId>nobody.MyExamplePlugin</PackageId>
-<Version>42.42.42.42</Version>
-<PackageProjectUrl>https://example.com/1</PackageProjectUrl>
-<Title>Example plugin</Title>
-<Authors>none</Authors>
-<Description>desc</Description>
-```
-其中，
-* `PackageId`： 插件的唯一标识符，**请确保他和你的插件类的全名一致，并且不得以`projectFrameCut`开头（不区分大小写）**
-* `Version`： 插件的版本号
-* `PackageProjectUrl`： 插件的项目主页URL，可以留空
-* `Title`： 插件的名称
-* `Authors`： 插件的作者
-* `Description`： 插件的描述
-
-
-3. 创建签名
-有很多种方法创建签名，最方便的是直接使用`PluginKeyGenerator.cs`:
-a. 在项目的根目录里，打开一个终端/命令提示符
-b. 运行命令`dotnet run PluginKeyGenerator.cs`
-c. 项目的根目录里会生成一个key.json文件。**把它移动到一个安全的地方**
-> [!WARNING]
-> **请保管好生成的 key.json 文件！**
-> **如果丢失，你的的用户将不能在未来更新他们的插件，只能卸载重装。**
-> **如果签名意外的泄露，你的插件可能会被滥用，因为projectFrameCut依赖签名来校验发布者！**
-
-e. 修改项目.csproj文件的第一个`PropertyGroup`：
-```xml
-<PluginSignFilePath>Path\To\You\key.json</PluginSignFilePath>
-```
-你需要把`Path\To\You\key.json`替换成签名文件实际的路径。
-
-4. 开发
-修改`PluginBase.cs`：
-* 把命名空间`nobody`，和类名`MyExamplePlugin`替换掉，**请注意，这些值会在最后成为你的插件ID的构成部分**
-* 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
-* 然后，实现你想要的东西
-你可以参阅共享库的API文档来了解每一个类、结构或者方法是干什么的。
-
-5. 分发
-a. 打开终端，转到你的项目的根目录（.csproj文件所在的目录）
-b. 运行这个命令：
-```bash
-dotnet publish -p:BundlePlugin=true --restore
-```
-你也可以使用大部分的`dotnet publish`参数来控制编译过程，包括但不限于`-o`选项来选择输出目录
-c. 稍等一会，在输出目录里你会发现一个`.pjfcPlugin`文件，这个就是你要分发的文件了。
+这个仓库提供了能够让你为[projectFrameCut](https://github.com/hexadecimal0x12e/projectFrameCut)应用程序、独立渲染器、相关组件、及 projectFrameCut 的衍生版本（如果他们的开发者愿意的话）开发一个插件，自定义projectFrameCut的功能的能力。
 
 # 如何开发
-首先，新建一个类库项目。
-1. 获取并引用projectFrameCut共享库
+你即可以从这里的模板开始，也可以手动一步步来，从头开始。
+**详见[这里](HowToMakePlugin.md)**。
 
-projectFrameCut共享库包括了大部分projectFrameCut渲染和处理的基础API，并且定义了许多基础类的接口。
-你可以直接从projectFrameCut的主程序目录里找到`projectFrameCut.Shared.dll`和`projectFrameCut.Render.RenderAPIBase.dll`，然后复制他们到一个文件夹里。
+# 关于普通插件和应用程序插件的区别
+projectFrameCut 的插件实现分两种：标准插件 (.NET 类库) 和应用程序插件 (.NET **MAUI** 类库)
+其中**应用程序插件**可以实现更多的功能，包括效果组和可交互的设置页面等等。
 
-然后，修改你的.csproj文件，添加下面的引用项：
-```xml
-<Reference Include="\Path\To\Shared\Libraries\projectFrameCut.Render.RenderAPIBase.dll" />
-<Reference Include="\Path\To\Shared\Libraries\projectFrameCut.Shared.dll" />
-<PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="1.0.0" />
+由于两种实现依赖的类库类型不同，因此，只有应用程序可以加载**应用程序插件**，而独立渲染器、或者未来可能有的云端/远程渲染只会支持**标准插件**。
+
+实际上，应用程序插件的基类 `IApplicationPluginBase` 是由标准插件 `IPluginBase` 继承而来的，因此，他们的区别实际上没那么大，开发的过程也几乎一致。
+
+一个建议的开发方法是，先使用**标准插件**(`IPluginBase`)实现所有的基础API，再实现一个**应用程序插件**(`IApplicationPluginBase`)并且继承你实现的**标准插件**，然后实现新的、应用程序插件专属的功能，通过配置`<PluginIDOverride>`和`<GeneratePluginInfoSource>`覆盖生成的插件ID使其和主插件一致，打包并且方法两个方法实现的插件提供给用户。
+
+看不懂？看流程图：
+```mermaid
+flowchart TD
+    subgraph 共享库
+    X[<code>IPluginBase</code>]
+    Y[<code>IApplicationPluginBase</code>]
+    end
+
+    subgraph 你的插件 
+    A[标准插件实现]
+    B[应用程序插件实现]
+    end
+
+    P[最终的标准插件包]
+    Q[最终的应用程序插件包]
+
+    X -->|实现接口| A
+    Y -->|实现接口| B
+    A -->|继承| B
+    A ---> P
+    B --> Q
 ```
-**请把`\Path\To\Shared\Libraries`替换成你把共享库复制到的目标文件夹**
 
-2. 实现插件类
-a. 在默认的Class1.cs里，修改默认提供的命名空间和类名到你想要的值。**请注意，这些值会在最后成为你的插件ID的构成部分**
-b. 修改声明，让默认的Class1 **变成`partial`** 并且实现`IPluginBase`，类似这样子：
-```csharp
-namespace nobody
-{
-    public partial class MyExamplePlugin : IPluginBase
-    {
-        //...
-    }
-}
-```
-你会注意到一堆错误信息：“MyExamplePlugin”不实现接口成员“IPluginBase.***”，先暂时不管他
-3. 实现接口
-粘贴下列代码到你的插件类里面：
-```csharp
-public Dictionary<string, Dictionary<string, string>> LocalizationProvider => new Dictionary<string, Dictionary<string, string>> { };
+你可以参照这个仓库里的两个模板项目，`projectFrameCut.PluginTemplate` 和 `projectFrameCut.ApplicationPluginTemplate` 来了解如何实现这两种插件。
 
-public Dictionary<string, Func<IEffect>> EffectProvider => new Dictionary<string, Func<IEffect>> { };
-
-public Dictionary<string, Func<IEffect>> ContinuousEffectProvider => new Dictionary<string, Func<IEffect>> { };
-
-public Dictionary<string, Func<IEffect>> VariableArgumentEffectProvider => new Dictionary<string, Func<IEffect>> { };
-
-public Dictionary<string, Func<IMixture>> MixtureProvider => new Dictionary<string, Func<IMixture>> { };
-
-public Dictionary<string, Func<IComputer>> ComputerProvider => new Dictionary<string, Func<IComputer>> { };
-
-public Dictionary<string, Func<string, string, IClip>> ClipProvider => new Dictionary<string, Func<string, string, IClip>> { };
-
-public Dictionary<string, Func<string, IVideoSource>> VideoSourceProvider => new Dictionary<string, Func<string, IVideoSource>> { };
-
-public Dictionary<string, string> Configuration { get => config; set { config = value; } }
-Dictionary<string, string> config = new Dictionary<string, string> { };
-
-public Dictionary<string, Dictionary<string, string>> ConfigurationDisplayString => new Dictionary<string, Dictionary<string, string>> { };
-
-public Dictionary<string, Func<string, string, ISoundTrack>> SoundTrackProvider => new Dictionary<string, Func<string, string, ISoundTrack>> { };
-
-public Dictionary<string, Func<string, IAudioSource>> AudioSourceProvider => new Dictionary<string, Func<string, IAudioSource>> { };
-
-public Dictionary<string, Func<string, IVideoWriter>> VideoWriterProvider => new Dictionary<string, Func<string, IVideoWriter>> { };
-
-public IClip ClipCreator(JsonElement element)
-{
-    throw new NotImplementedException();
-}
-
-public ISoundTrack SoundTrackCreator(JsonElement element)
-{
-    throw new NotImplementedException();
-}
-
-bool IPluginBase.OnLoaded(out string FailedReason)
-{
-    FailedReason = string.Empty;
-    return true;
-}
-
-```
-你还会注意到一些错误指出类似于“MyExamplePlugin”不实现接口成员“IPluginBase.PluginID”的错误，**先不要实现这里提出的接口，他们会自动生成**
-
-3. 配置项目
-然后，配置插件的属性。在项目的.csproj的第一个`PropertyGroup`添加：
-```xml
-<PackageId>nobody.MyExamplePlugin</PackageId>
-<Version>42.42.42.42</Version>
-<PackageProjectUrl>https://example.com/1</PackageProjectUrl>
-<Title>Example plugin</Title>
-<Authors>none</Authors>
-<Description>desc</Description>
-```
-其中，
-* `PackageId`： 插件的唯一标识符，**请确保他和你的插件类的全名一致，并且不得以`projectFrameCut`开头（不区分大小写）**
+# 打包器配置
+打包器向MSBuild提供了一些参数来控制打包器的行为：
+### 基础信息
+这些配置不是由打包器特有的，而是标准的NuGet包属性：
+* `PackageId`： 插件的包ID，也会作为它的唯一标识符，
+    **请确保他和你的插件类的全名一致，并且不得以`projectFrameCut`开头（不区分大小写）**。 
+    如果同时配置了`PluginIDOverride`和`PackageId`，打包器会使用`PluginIDOverride`的值作为插件ID。
 * `Version`： 插件的版本号
 * `PackageProjectUrl`： 插件的项目主页URL，可以留空
-* `Title`： 插件的名称
+
+下面这些属性都是没有本地化的，如果你想要本地化这些信息，请配置插件基类的`LocalizationProvider`。
+* `Title`： 插件的显示名称
 * `Authors`： 插件的作者
 * `Description`： 插件的描述
 
-你可以试着生成项目，所有的`“MyExamplePlugin”不实现接口成员“...”`错误都应该消失了。
+### 签名
+* `PluginSignFilePath`：必须设置这个属性来配置签名密钥
+    最方便的方式是使用`PluginKeyGenerator.cs`来生成一个签名文件。
+    如果你想要手动构建签名文件，你需要先准备一个Base64格式的PKCS #8密钥对，然后创建一个JSON文件，填入公钥到签名文件的`Key`字段，填入私钥到`Value`字段。
 
-4. 创建签名
-有很多种方法创建签名，最方便的是直接使用`PluginKeyGenerator.cs`:
-a. 下载文件[PluginKeyGenerator.cs](https://github.com/hexadecimal0x12e/projectFrameCut.PluginTemplate/blob/main/PluginKeyGenerator.cs)到本地
-b. 打开终端/命令提示符，使用CD命令转到一个安全的目录（比如你的插件项目的根目录）
-c. 运行命令`dotnet run <path>`，把`<path>`替换成你下载的`PluginKeyGenerator.cs`的完整路径（比如"c:\user\nobody\download\PluginKeyGenerator.cs"）
-d. 你在b里转到的目录里会生成一个key.json文件。
-> [!WARNING]
-> **请保管好生成的 key.json 文件！**
-> **如果丢失，你的的用户将不能在未来更新他们的插件，只能卸载重装。**
-> **如果签名意外的泄露，你的插件可能会被滥用，因为projectFrameCut依赖签名来校验发布者！**
+### 素材
+* `PluginAssetPath`：插件素材的路径，打包器会把这个路径下的所有文件都包含进插件包里。如果不需要素材，可以不设置这个属性。
 
-e. 修改你的项目.csproj文件，在第一个`PropertyGroup`里添加这个：
-```xml
-<PluginSignFilePath>Path\To\You\key.json</PluginSignFilePath>
-```
-你需要把`Path\To\You\key.json`替换成签名文件实际的路径。
+### 源生成
+* `GeneratePluginInfoSource`：是否生成插件信息源代码文件，默认为 `true`。如果你通过继承标准插件来实现应用程序插件，或者就是想手动实现插件信息，设置为 `false` 可以阻止源生成。
+* `GeneratePluginInfoSourcePath`：生成的插件信息源代码文件的路径，
+    默认为空，表示生成在 `obj\GeneratedSource\PluginInfo.g.cs`。如果你想指定路径，可以设置为你想要的路径。
+* `PluginIDOverride`：用于覆盖生成的插件ID，而不是使用NuGet属性`PackageId`。如果你通过继承标准插件来实现应用程序插件，你需要设置这个参数来确保他们的插件ID一致。
 
-5. 开发
-a. 创建插件加载器
-a1. 下载[PluginLoader.cs](https://github.com/hexadecimal0x12e/projectFrameCut.PluginTemplate/blob/main/projectFrameCut.PluginTemplate/PluginLoader.cs)
-a2. 在你的项目里新建一个`PluginLoader.cs`，替换内容到你下载的文件，不要修改任何部分
-a3. 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
+# 打包插件
+使用`dotnet publish`命令来打包你的插件，编译完成之后，在输出目录下会生成一个`.pfcplugin`的插件包文件。
 
-b. 开发你喜欢的东西
-你可以参阅共享库的API文档来了解每一个类、结构或者方法是干什么的。
+你必须使用 .NET CLI来打包，**不要使用Visual Studio的打包功能**。如果你已经在使用命令行但是持续遇到报错`To bundle a plugin, please use 'dotnet publish' command, instead of using Visual Studio's Publish tool...`，请添加命令行参数`-p:BundlePlugin=true` 到`dotnet publish`命令里。
 
-6. 分发
-a. 打开终端，转到你的项目的根目录（.csproj文件所在的目录）
-b. 运行这个命令：
-```bash
-dotnet publish -p:BundlePlugin=true --restore
-```
-你也可以使用大部分的`dotnet publish`参数来控制编译过程，包括但不限于`-o`选项来选择输出目录
-c. 稍等一会，在输出目录里你会发现一个`.pjfcPlugin`文件，这个就是你要分发的文件了。

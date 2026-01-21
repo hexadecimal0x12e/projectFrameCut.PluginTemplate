@@ -10,6 +10,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,14 +19,17 @@ namespace projectFrameCut.PluginPackager.MSBuild
 {
     public class PluginBuilder : Microsoft.Build.Utilities.Task
     {
-        public const int CurrentPluginAPIVersion = 1;
+        public const int CurrentPluginAPIVersion = 2;
+        public const int CurrentPluginAPIMinorVersion = 0;
+
+        private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly StringComparer PathComparer = IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
         public override bool Execute()
         {
 #if NET5_0_OR_GREATER
             try
             {
-                // 输出所有公开参数（使用反射）
                 var sb = new StringBuilder();
                 sb.AppendLine("PluginBuilder arguments:");
                 var props = GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -72,8 +76,6 @@ namespace projectFrameCut.PluginPackager.MSBuild
                 Log.LogMessage(MessageImportance.High, sb.ToString());
                 Log.LogMessage($"TFM:{TargetFrameworkID}");
 
-                // If requested, generate a partial source file that provides
-                // the basic IPluginBase properties (so the project can compile them).
                 if (GenerateSource)
                 {
                     try
@@ -169,7 +171,7 @@ namespace projectFrameCut.PluginPackager.MSBuild
             }
             else
             {
-                Log.LogError("To bundle a plugin, please use 'dotnet publish' command, along with appending this to your dotnet command:'-p:BundlePlugin=true', instead of using Visual Studio's Publish tool.");
+                Log.LogError("To bundle a plugin, please use 'dotnet publish' command, instead of using Visual Studio's Publish tool. If you still faced with this issue, try appending this to your dotnet command:'-p:BundlePlugin=true'");
                 return false;
             }
             
@@ -180,13 +182,13 @@ namespace projectFrameCut.PluginPackager.MSBuild
         {
 
             var mainDllPath = Path.Combine(projectRoot, DllPath);
-            Console.WriteLine($"pluginID:{pluginID}, mainDLLPath: {mainDllPath}, assetPath:{assetPath}, tempPath:{tempPath}, kpPath:{kpPath}");
+            Log.LogMessage($"pluginID:{pluginID}, mainDLLPath: {mainDllPath}, assetPath:{assetPath}, tempPath:{tempPath}, kpPath:{kpPath}");
             if (mainDllPath is null || !File.Exists(mainDllPath)) throw new FileNotFoundException($"Plugin source not found.");
-            Console.WriteLine($"PluginID: {pluginID}, workingDir: {tempPath}");
+            Log.LogMessage($"PluginID: {pluginID}, workingDir: {tempPath}");
             string pubKey = "", priKey = "";
             GetKeypairFromFile(kpPath, out pubKey, out priKey);
 
-            Console.WriteLine("Encrypting assembly...");
+            Log.LogMessage("Encrypting assembly...");
             var pluginDir = Path.Combine(tempPath, "plugin");
             if (Directory.Exists(pluginDir))
             {
@@ -199,15 +201,32 @@ namespace projectFrameCut.PluginPackager.MSBuild
             var encFilePath = Path.Combine(tempPath, "plugin", pluginID + ".dll.enc");
             var sigKey = ComputeStringHash(pubKey, SHA512.Create());
             projectFrameCut.Shared.FileCryptoService.EncryptToFileWithPassword(sigKey, mainDllPath, encFilePath);
-            Console.WriteLine("Making metadata...");
+            Log.LogMessage("Making metadata...");
             mtd.PluginHash = ComputeFileHashAsync(mainDllPath);
             mtd.PluginKey = sigKey;
             var mtdJson = JsonConvert.SerializeObject(mtd, Formatting.Indented);
-            Console.WriteLine($"Metadata:\r\n{mtdJson}");
-
-            Console.WriteLine("Packaging plugin...");
+            Log.LogMessage("Packaging plugin...");
             File.WriteAllText(Path.Combine(tempPath, "plugin", "metadata.json"), mtdJson);
             File.WriteAllText(Path.Combine(tempPath, "plugin", "publickey.pem"), pubKey);
+
+            if (BundlePublishOutputs)
+            {
+                try
+                {
+                    CopyPublishOutputsToPluginFolder(
+                        publishDir: tempPath,
+                        pluginDir: pluginDir,
+                        mainAssemblyPath: mainDllPath,
+                        includeMainAssemblyPlain: IncludeMainAssemblyPlain,
+                        extraExcludePatterns: BundleExcludePatterns);
+                }
+                catch (Exception ex)
+                {
+                    Log.LogErrorFromException(ex, true, true, null);
+                    throw;
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(assetPath) && Directory.Exists(assetPath))
             {
                 //Copy assets
@@ -218,7 +237,7 @@ namespace projectFrameCut.PluginPackager.MSBuild
                     var relativePath = Path.GetRelativePath(assetPath, file);
                     var destFilePath = Path.Combine(destAssetPath, relativePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(destFilePath));
-                    Console.WriteLine($"Copying asset {file} to {destFilePath}...");
+                    Log.LogMessage($"Copying asset {file} to {destFilePath}...");
                     File.Copy(file, destFilePath, true);
                 }
             }
@@ -226,15 +245,16 @@ namespace projectFrameCut.PluginPackager.MSBuild
             {
                 Log.LogMessage("No asset provided, skip.");
             }
+            Log.LogMessage("Creating hashtable...");
             Dictionary<string, string> hashTable = new Dictionary<string, string>();
             foreach (var file in Directory.GetFiles(Path.Combine(tempPath, "plugin"), "*", SearchOption.AllDirectories))
             {
                 var relativePath = Path.GetRelativePath(Path.Combine(tempPath, "plugin"), file);
                 var fileHash = ComputeFileHashAsync(file);
                 hashTable[relativePath.Replace('\\', '/')] = fileHash;
+                Log.LogMessage($"File: {relativePath}, Hash: {fileHash}");
             }
             var hashJson = JsonConvert.SerializeObject(hashTable, Formatting.Indented);
-            Log.LogMessage($"hashtable:{hashJson}");
             File.WriteAllText(Path.Combine(tempPath, "plugin", "hashtable.json"), hashJson);
 
             var zipPath = Path.Combine(tempPath, $"{pluginID}_{mtd.Version}.pjfcPlugin");
@@ -242,33 +262,164 @@ namespace projectFrameCut.PluginPackager.MSBuild
             {
                 File.Delete(zipPath);
             }
-
+            
+            Log.LogMessage("Creating plugin package...");
             ZipFile.CreateFromDirectory(Path.Combine(tempPath, "plugin"), zipPath, CompressionLevel.Optimal, false);
 
-            Console.WriteLine($"Plugin packaged to {zipPath}");
+            try
+            {
+                File.Delete(Path.Combine(tempPath, "plugin", "hashtable.json"));
+            }
+            catch (Exception ex)
+            {
+                Log.LogWarning($"Failed to delete hashtable.json from staging folder: {ex.Message}");
+            }
 
+
+            Log.LogMessage($"Plugin packaged to {zipPath}");
+
+        }
+
+        private void CopyPublishOutputsToPluginFolder(
+            string publishDir,
+            string pluginDir,
+            string mainAssemblyPath,
+            bool includeMainAssemblyPlain,
+            string extraExcludePatterns)
+        {
+            if (string.IsNullOrWhiteSpace(publishDir) || !Directory.Exists(publishDir))
+            {
+                Log.LogError($"Publish output directory not found: {publishDir}");
+                return;
+            }
+
+            var publishRoot = Path.GetFullPath(AppendDirectorySeparatorChar(publishDir));
+            var pluginRoot = Path.GetFullPath(AppendDirectorySeparatorChar(pluginDir));
+
+            var mainAssemblyFullPath = string.IsNullOrWhiteSpace(mainAssemblyPath) ? string.Empty : Path.GetFullPath(mainAssemblyPath);
+            var mainAssemblyFileName = string.IsNullOrWhiteSpace(mainAssemblyFullPath) ? string.Empty : Path.GetFileName(mainAssemblyFullPath);
+
+            var extraExcludes = ParseExcludePatterns(extraExcludePatterns);
+
+            foreach (var srcFile in Directory.GetFiles(publishRoot, "*", SearchOption.AllDirectories))
+            {
+                var srcFullPath = Path.GetFullPath(srcFile);
+
+                // Don't copy files that are already under the plugin staging folder (prevents recursion).
+                if (IsUnderDirectory(srcFullPath, pluginRoot))
+                    continue;
+
+                // Don't copy existing plugin packages.
+                if (string.Equals(Path.GetExtension(srcFullPath), ".pjfcPlugin", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // By default, do not include the plain main assembly (the package contains the encrypted one).
+                if (!includeMainAssemblyPlain && !string.IsNullOrWhiteSpace(mainAssemblyFileName))
+                {
+                    var fileName = Path.GetFileName(srcFullPath);
+                    if (string.Equals(fileName, mainAssemblyFileName, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
+                var rel = Path.GetRelativePath(publishRoot, srcFullPath);
+
+                // Skip top-level "plugin\\" folder even if path comparison above fails for any reason.
+                if (rel.StartsWith("plugin" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                    rel.StartsWith("plugin/", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (IsExcludedByPatterns(rel, extraExcludes))
+                    continue;
+
+                var destPath = Path.Combine(pluginRoot, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                File.Copy(srcFullPath, destPath, true);
+            }
+        }
+
+        private static bool IsUnderDirectory(string fullPath, string directoryFullPathWithSeparator)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath) || string.IsNullOrWhiteSpace(directoryFullPathWithSeparator))
+                return false;
+
+            var comparison = IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return fullPath.StartsWith(directoryFullPathWithSeparator, comparison);
+        }
+
+        private static List<string> ParseExcludePatterns(string patterns)
+        {
+            if (string.IsNullOrWhiteSpace(patterns))
+                return new List<string>();
+
+            return patterns
+                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .ToList();
+        }
+
+        private static bool IsExcludedByPatterns(string relativePath, List<string> patterns)
+        {
+            if (patterns == null || patterns.Count == 0)
+                return false;
+
+            // Normalize to forward slashes for matching.
+            var path = (relativePath ?? string.Empty).Replace('\\', '/');
+            foreach (var pattern in patterns)
+            {
+                if (WildcardMatch(path, pattern.Replace('\\', '/')))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool WildcardMatch(string text, string pattern)
+        {
+            // Very small wildcard matcher: supports '*' and '?', case-insensitive on Windows.
+            if (text == null) text = string.Empty;
+            if (pattern == null) pattern = string.Empty;
+
+            var comparison = IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+            int t = 0, p = 0, star = -1, match = 0;
+            while (t < text.Length)
+            {
+                if (p < pattern.Length && (pattern[p] == '?' || string.Compare(text, t, pattern, p, 1, comparison) == 0))
+                {
+                    t++;
+                    p++;
+                    continue;
+                }
+                if (p < pattern.Length && pattern[p] == '*')
+                {
+                    star = p++;
+                    match = t;
+                    continue;
+                }
+                if (star != -1)
+                {
+                    p = star + 1;
+                    t = ++match;
+                    continue;
+                }
+                return false;
+            }
+
+            while (p < pattern.Length && pattern[p] == '*')
+                p++;
+
+            return p == pattern.Length;
         }
 #endif
 
         public static void GetKeypairFromFile(string path, out string pubKey, out string priKey)
         {
-            try
-            {
-                KeyValuePair<string, string> kp = JsonConvert.DeserializeObject<KeyValuePair<string, string>>(File.ReadAllText(path));
-                pubKey = kp.Key;
-                priKey = kp.Value;
-                Console.WriteLine("Success get keypair.");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to get keypair:{ex.Message}. Try again.");
-                //pubKey = null;
-                //priKey = null;
-                throw;
-
-
-            }
+            KeyValuePair<string, string> kp = JsonConvert.DeserializeObject<KeyValuePair<string, string>>(File.ReadAllText(path));
+            pubKey = kp.Key;
+            priKey = kp.Value;
         }
 
         [DebuggerNonUserCode()]
@@ -277,8 +428,11 @@ namespace projectFrameCut.PluginPackager.MSBuild
             algorithm = SHA256.Create();
             if (System.IO.File.Exists(fileName))
             {
-                System.IO.FileStream fs = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                byte[] buffer = algorithm.ComputeHash(fs);
+                byte[] buffer;
+                using (System.IO.FileStream fs = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read, FileShare.Read))
+                {
+                    buffer = algorithm.ComputeHash(fs);
+                }
                 algorithm.Clear();
                 return buffer.Select(c => c.ToString("x2")).Aggregate((a, b) => a + b);
             }
@@ -329,6 +483,23 @@ namespace projectFrameCut.PluginPackager.MSBuild
 
         public bool GenerateSource { get; set; }
         public string GenerateSourcePath { get; set; }
+
+    /// <summary>
+    /// When true, bundle all files produced by publish output into the plugin package (dependencies/resources/native files).
+    /// </summary>
+    public bool BundlePublishOutputs { get; set; } = true;
+
+    /// <summary>
+    /// When true, also include the unencrypted main plugin assembly from publish output.
+    /// Keep false by default to avoid leaking the plugin code because the package already contains the encrypted main assembly.
+    /// </summary>
+    public bool IncludeMainAssemblyPlain { get; set; } = false;
+
+    /// <summary>
+    /// Optional semicolon-separated wildcard patterns to exclude publish output files.
+    /// Match is applied on relative path (with '/' separators). Example: "*.pdb;*.xml;runtimes/*/native/*".
+    /// </summary>
+    public string BundleExcludePatterns { get; set; }
 
 
         [Output]

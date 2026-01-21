@@ -7,4 +7,4 @@
 <PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="1.0.0" />
 ```
 
-更多的信息请参考[仓库的主文档](https://www.nuget.org/packages/projectFrameCut.PluginPackager.MSBuild/)。
+更多的信息请参考[仓库的主文档](https://github.com/hexadecimal0x12e/projectFrameCut.PluginPackager)。

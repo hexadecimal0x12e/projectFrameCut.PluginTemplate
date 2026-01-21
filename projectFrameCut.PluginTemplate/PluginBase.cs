@@ -10,8 +10,9 @@ using projectFrameCut.Render.RenderAPIBase.Plugins;
 using projectFrameCut.Render.RenderAPIBase.Sources;
 using projectFrameCut.Shared;
 using System.Text.Json;
-
+#pragma warning disable IDE0130
 namespace nobody
+#pragma warning restore IDE0130
 {
     /// <summary>
     /// This is an example plugin implementation.
@@ -73,14 +74,29 @@ namespace nobody
             {"ToBlankFrameEffect", () => new ToBlankFrameEffect() }
         };
 
+        public Dictionary<string, IEffectFactory> EffectFactoryProvider => new Dictionary<string, IEffectFactory>
+        {
+
+        };
+
         public Dictionary<string, Func<IEffect>> ContinuousEffectProvider => new Dictionary<string, Func<IEffect>>
         {
 
         };
 
-        public Dictionary<string, Func<IEffect>> VariableArgumentEffectProvider => new Dictionary<string, Func<IEffect>>
-        {
+        public Dictionary<string, IEffectFactory> ContinuousEffectFactoryProvider => new Dictionary<string, IEffectFactory> 
+        { 
+        
+        };
 
+        public Dictionary<string, Func<IEffect>> BindableArgumentEffectProvider => new Dictionary<string, Func<IEffect>> 
+        {
+        
+        };
+
+        public Dictionary<string, IEffectFactory> BindableArgumentEffectFactoryProvider => new Dictionary<string, IEffectFactory> 
+        {
+        
         };
 
         public Dictionary<string, Func<IMixture>> MixtureProvider => new Dictionary<string, Func<IMixture>>
@@ -223,5 +239,9 @@ namespace nobody
             FailedReason = string.Empty;
             return true;
         }
+        
+        public IMessagingService MessagingQueue { get; set; }
+
+
     }
 }

@@ -4,12 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+		<RestoreSources>$(RestoreSources);C:\Users\azert\source\repos\projectFrameCut.PluginTemplate\projectFrameCut.PluginPackager.MSBuild\bin\Release</RestoreSources>
     <!--You must set all these properties below, except PluginAssetPath.-->
 
     <!--
-	This'll be the ID of the plugin. 
-	It muse equals to the full name of your implementation of IPluginBase, and SHOULD NOT starts with 'projectFrameCut'.
-	-->
+	    This'll be the ID of the plugin. 
+	    It muse equals to the full name of your implementation of IPluginBase, and SHOULD NOT starts with 'projectFrameCut'.
+	  -->
     <PackageId>nobody.MyExamplePlugin</PackageId>
     <!--This'll be the version of the plugin.-->
     <Version>42.42.42.42</Version>
@@ -29,13 +30,13 @@
 
     <!--The path to the plugin's assets. Note this is optional.-->
     <PluginAssetPath>D:\code\playground\projectFrameCut\plugin\asset</PluginAssetPath>
-  </PropertyGroup>
+	</PropertyGroup>
 
   <ItemGroup>
 	<!--Don't modifly them.-->
     <Reference Include="..\PluginBaseAssembly\projectFrameCut.Render.RenderAPIBase.dll" />
     <Reference Include="..\PluginBaseAssembly\projectFrameCut.Shared.dll" />
-    <PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="1.0.0" />
+    <PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="2.0.0" />
 	<!--Add your reference below.-->
 
   </ItemGroup>

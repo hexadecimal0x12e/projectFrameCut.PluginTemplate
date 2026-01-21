@@ -366,6 +366,7 @@ FodyWeavers.xsd
 PluginBaseAssembly/*.dll
 PluginBaseAssembly/*.json
 PluginBaseAssembly/*.pdb
+PluginBaseAssembly/*.xml
 PluginBaseAssembly/*.nupkg
 
 /projectFrameCut.PluginTemplate/GeneratedPluginInfo.g.cs

@@ -31,6 +31,15 @@ namespace nobody
         public int RelativeWidth { get; set; }
         public int RelativeHeight { get; set; }
 
+        public EffectImplementType ImplementType => EffectImplementType.IPicture;
+
+        public bool YieldProcessStep => false;
+
+        public IPictureProcessStep GetStep(IPicture source, int targetWidth, int targetHeight)
+        {
+            throw new NotImplementedException();
+        }
+
         public IPicture Render(IPicture source, IComputer? computer, int targetWidth, int targetHeight)
         {
             if (source.bitPerPixel == 8) return Picture8bpp.GenerateSolidColor(targetWidth, targetHeight, (byte)0, (byte)0, (byte)0, null);
