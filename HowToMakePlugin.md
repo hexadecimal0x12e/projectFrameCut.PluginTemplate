@@ -138,13 +138,13 @@ e. 修改你的项目.csproj文件，在第一个`PropertyGroup`里添加这个�
 
 5. 开发
 a. 创建插件加载器
-a1. 下载[PluginLoader.cs](https://github.com/hexadecimal0x12e/projectFrameCut.PluginTemplate/blob/main/projectFrameCut.PluginTemplate/PluginLoader.cs)
-a2. 在你的项目里新建一个`PluginLoader.cs`，替换内容到你下载的文件。
-a3. 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
-如果你开发了应用程序插件，**你还需要把`PluginLoader.cs`里的`PluginLoader`替换成`AppLevelPluginLoader`**.
+    a1. 下载[PluginLoader.cs](https://github.com/hexadecimal0x12e/projectFrameCut.PluginTemplate/blob/main/projectFrameCut.PluginTemplate/PluginLoader.cs)
+    a2. 在你的项目里新建一个`PluginLoader.cs`，替换内容到你下载的文件。
+    a3. 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
+    如果你开发了应用程序插件，**你还需要把`PluginLoader.cs`里的`PluginLoader`替换成`AppLevelPluginLoader`**.
+ <br/>
 
-
-b. 开发你喜欢的东西
+    b. 开发你喜欢的东西
 你可以参阅共享库的API文档来了解每一个类、结构或者方法是干什么的。
 
 6. 分发
