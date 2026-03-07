@@ -1,31 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
-
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<RestoreSources>$(RestoreSources);C:\Users\azert\source\repos\projectFrameCut.PluginTemplate\projectFrameCut.PluginPackager.MSBuild\bin\Release</RestoreSources>
+		<!-- Enable XAML source generation for faster build times and improved performance.
+		     This generates C# code from XAML at compile time instead of runtime inflation.
+		     To disable, remove this line.
+		     For individual files, you can override by setting Inflator metadata:
+		       <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
+		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
+		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
-		<GeneratePluginInfoSource>false</GeneratePluginInfoSource>
-
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<!--You must set all these properties below, except PluginAssetPath.-->
 
-		<!--
-				This'll be the ID of the plugin. 
-				It muse equals to the full name of your implementation of IPluginBase, and SHOULD NOT starts with 'projectFrameCut'.
-		-->
-		<PackageId>nobody.MyExamplePlugin_AppParticalPart</PackageId>
-		<PluginIDOverride>nobody.MyExamplePlugin</PluginIDOverride>
+		<!--To implement this plugin through inheritance, you need to set this property to false.-->
+		<GeneratePluginInfoSource>false</GeneratePluginInfoSource>
+		<GenerateLoader>true</GenerateLoader>
+		<!--Set to a different PackageID to avoid the error while building.-->
+		<PackageId>somebody.AExamplePlugin_AppPart</PackageId>
+		
 		<Version>42.42.42.42</Version>
 		<PluginSignFilePath>D:\code\playground\projectFrameCut\key.json</PluginSignFilePath>
 		<PackageProjectUrl>https://example.com/1</PackageProjectUrl>
@@ -38,20 +38,13 @@
 
 		<!--The path to the plugin's assets. Note this is optional.-->
 		<PluginAssetPath>D:\code\playground\projectFrameCut\plugin\asset</PluginAssetPath>
+		<RestoreSources>$(RestoreSources);..\..\projectFrameCut.PluginPackager.MSBuild\projectFrameCut.PluginPackager.MSBuild\bin\Release </RestoreSources>
 	</PropertyGroup>
-
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<Reference Include="..\PluginBaseAssembly\projectFrameCut.Render.RenderAPIBase.dll" />
-		<Reference Include="..\PluginBaseAssembly\projectFrameCut.ApplicationAPIBase.dll" />
-    <Reference Include="..\PluginBaseAssembly\projectFrameCut.Shared.dll" />
-    <PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="2.0.0" />		
-		
+		<Reference Include="..\Assemblies\projectFrameCut.ApplicationAPIBase.dll" />
+		<Reference Include="..\Assemblies\projectFrameCut.Shared.dll" />
+		<Reference Include="..\Assemblies\projectFrameCut.Render.RenderAPIBase.dll" />
+		<ProjectReference Include="..\somebody.AExamplePlugin\somebody.AExamplePlugin.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\projectFrameCut.PluginTemplate\projectFrameCut.PluginTemplate.csproj" />
-	</ItemGroup>
-
 
 </Project>

@@ -1,43 +1,23 @@
 ﻿using projectFrameCut.ApplicationAPIBase.Effect;
 using projectFrameCut.ApplicationAPIBase.Plugins;
-using projectFrameCut.ApplicationAPIBase.PropertyPanelBuilders;
-using projectFrameCut.Plugin;
-using projectFrameCut.Render.RenderAPIBase.ClipAndTrack;
-using projectFrameCut.Render.RenderAPIBase.EffectAndMixture;
-using projectFrameCut.Render.RenderAPIBase.Plugins;
-using projectFrameCut.Render.RenderAPIBase.Sources;
-using projectFrameCut.Shared;
-using System.Text.Json;
-#pragma warning disable CA1416 // We can ensure it runs on supported platforms.
-#pragma warning disable IDE0130
-namespace nobody
-#pragma warning restore IDE0130
+using projectFrameCut.ApplicationAPIBase.Views.PropertyPanelBuilders;
+namespace somebody
 {
-    /// <summary>
-    /// This is an example application-level plugin implementation.
-    /// </summary>
-    public class MyExamplePluginApplicationLevelPart : MyExamplePlugin, IApplicationPluginBase
+    // All the code in this file is included in all platforms in the plugin.
+    public partial class AExamplePlugin_AppPart : AExamplePlugin, IApplicationPluginBase
     {
-        public Dictionary<string, Func<IEffectBundle>> EffectBundleProvider => new Dictionary<string, Func<IEffectBundle>>
-        {
+        public int AppLevelPluginAPIVersion => 3;
 
-        };
+        public Dictionary<string, Func<IEffectBundle>> EffectBundleProvider => new();
 
         public View? SettingPageProvider(ref IApplicationPluginBase instance)
         {
-            PropertyPanelBuilder ppb = new();
-            ppb.AddText("Hello world!");
-            ppb.AddButton("Click me!", async (s,e) =>
+            var ppb = new PropertyPanelBuilder();
+            ppb.AddButton("Test button", async (s,e) =>
             {
-                if(Application.Current?.Windows?.First()?.Page is Page page)
-                {
-                    await page.DisplayAlertAsync("Button clicked", "You clicked the button!", "OK");
-
-                }
+                await (Application.Current?.Windows[0]?.Page?.DisplayAlertAsync("Hello", PlatformSpecificFunction(), "ok") ?? Task.CompletedTask);
             });
-
-            return ppb.BuildWithScrollView();
+            return ppb.Build();
         }
     }
 }
-

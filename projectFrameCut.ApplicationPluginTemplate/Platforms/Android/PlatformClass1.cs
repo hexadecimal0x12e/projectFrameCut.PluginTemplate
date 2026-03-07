@@ -1,7 +1,13 @@
-﻿namespace projectFrameCut.ApplicationPluginTemplate
+﻿using projectFrameCut.ApplicationAPIBase.Plugins;
+
+namespace somebody
 {
     // All the code in this file is only included on Android.
-    public class PlatformClass1
+    public partial class AExamplePlugin_AppPart : AExamplePlugin, IApplicationPluginBase
     {
+        public string PlatformSpecificFunction()
+        {
+            return "Hello from Android!";
+        }
     }
 }
