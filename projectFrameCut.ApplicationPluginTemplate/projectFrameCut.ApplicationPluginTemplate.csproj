@@ -38,13 +38,13 @@
 
 		<!--The path to the plugin's assets. Note this is optional.-->
 		<PluginAssetPath>D:\code\playground\projectFrameCut\plugin\asset</PluginAssetPath>
-		<RestoreSources>$(RestoreSources);..\..\projectFrameCut.PluginPackager.MSBuild\projectFrameCut.PluginPackager.MSBuild\bin\Release </RestoreSources>
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="..\Assemblies\projectFrameCut.ApplicationAPIBase.dll" />
 		<Reference Include="..\Assemblies\projectFrameCut.Shared.dll" />
 		<Reference Include="..\Assemblies\projectFrameCut.Render.RenderAPIBase.dll" />
 		<ProjectReference Include="..\somebody.AExamplePlugin\somebody.AExamplePlugin.csproj" />
+		<PackageReference Include="projectFrameCut.PluginPackager.MSBuild" Version="3.0.0" />
 	</ItemGroup>
 
 </Project>

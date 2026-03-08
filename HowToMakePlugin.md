@@ -8,7 +8,7 @@
 1. 获取并引用projectFrameCut共享库
 
 projectFrameCut共享库包括了大部分projectFrameCut渲染和处理的基础API，并且定义了许多基础类的接口。
-你可以直接从projectFrameCut的主程序目录里找到`projectFrameCut.Shared.dll`、`projectFrameCut.Render.RenderAPIBase.dll`和`projectFrameCut.ApplicationAPIBase.dll`，然后复制到项目根目录里的`PluginBaseAssembly`文件夹里。
+你可以直接从projectFrameCut的主程序目录里找到`projectFrameCut.Shared.dll`、`projectFrameCut.Render.RenderAPIBase.dll`和`projectFrameCut.ApplicationAPIBase.dll`，然后复制到项目根目录里的`Assemblies`文件夹里。
 
 2. 配置项目
 修改项目的.csproj的第一个`PropertyGroup`：
@@ -48,7 +48,6 @@ e. 修改项目.csproj文件的第一个`PropertyGroup`：
 4. 开发
 修改`PluginBase.cs`：
 * 把命名空间`nobody`，和类名`MyExamplePlugin`替换掉，**请注意，这些值会在最后成为你的插件ID的构成部分**
-* 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
 * 然后，实现你想要的东西
 你可以参阅共享库的API文档来了解每一个类、结构或者方法是干什么的。
 
@@ -137,14 +136,6 @@ e. 修改你的项目.csproj文件，在第一个`PropertyGroup`里添加这个�
 你需要把`PluginSignFilePath`里的路径替换成签名文件实际的路径。
 
 5. 开发
-a. 创建插件加载器
-    a1. 下载[PluginLoader.cs](https://github.com/hexadecimal0x12e/projectFrameCut.PluginTemplate/blob/main/projectFrameCut.PluginTemplate/PluginLoader.cs)
-    a2. 在你的项目里新建一个`PluginLoader.cs`，替换内容到你下载的文件。
-    a3. 打开`PluginLoader.cs`，把`return new MyExamplePlugin();`的`MyExamplePlugin`替换成你的插件类。
-    如果你开发了应用程序插件，**你还需要把`PluginLoader.cs`里的`PluginLoader`替换成`AppLevelPluginLoader`**.
- <br/>
-
-    b. 开发你喜欢的东西
 你可以参阅共享库的API文档来了解每一个类、结构或者方法是干什么的。
 
 6. 分发

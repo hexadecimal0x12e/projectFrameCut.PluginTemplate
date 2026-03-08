@@ -31,7 +31,6 @@
 		<PluginAssetPath>D:\code\playground\projectFrameCut\plugin\asset</PluginAssetPath>
 
 		<GeneratePluginInfoSource>true</GeneratePluginInfoSource>
-		<RestoreSources>$(RestoreSources);..\..\projectFrameCut.PluginPackager.MSBuild\projectFrameCut.PluginPackager.MSBuild\bin\Release </RestoreSources>
 	</PropertyGroup>
 
 	<ItemGroup>
